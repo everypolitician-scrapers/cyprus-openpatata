@@ -20,6 +20,10 @@ def yaml_from(url)
   YAML.parse(open(url).read).to_ruby
 end
 
+def parl_group(id)
+  (@pg ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/parliamentary_groups/%s.yaml' % id)
+end
+
 def scrape_members(term, url)
   json_from(url).each do |file|
     mp = yaml_from(file[:download_url])
@@ -40,13 +44,20 @@ def scrape_members(term, url)
     mp['tenures'].select { |tenure|
       tenure['end_date'].to_s.empty? || tenure['end_date'].to_s >= term[:start_date]
     }.each do |tenure|
-      tenure['parl_group'] ||= { 'en' => 'Independent', 'el' => 'Independent' }
+      if tenure['parliamentary_group_id']
+        pg = parl_group(tenure['parliamentary_group_id'])
+        tenure['parl_group'] ||= { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
+      else
+        tenure['parliamentary_group_id'] = '_IND'
+        tenure['parl_group'] ||= { 'en' => 'Independent', 'el' => 'Independent' }
+      end
       mem = data.merge({ 
         term: term[:id],
         start_date: tenure['start_date'],
         end_date: tenure['end_date'],
         area: tenure['electoral_district']['en'],
         area__el: tenure['electoral_district']['el'],
+        faction_id: tenure['parliamentary_group_id'],
         faction: tenure['parl_group']['en'],
         faction__el: tenure['parl_group']['el'],
       })
