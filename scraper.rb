@@ -45,8 +45,8 @@ def scrape_members(term, url)
         term: term[:id],
         start_date: tenure['start_date'],
         end_date: tenure['end_date'],
-        area: tenure['district']['en'],
-        area__el: tenure['district']['el'],
+        area: tenure['electoral_district']['en'],
+        area__el: tenure['electoral_district']['el'],
         faction: tenure['parl_group']['en'],
         faction__el: tenure['parl_group']['el'],
       })
