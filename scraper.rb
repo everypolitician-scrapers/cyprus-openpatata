@@ -29,13 +29,17 @@ def scrape_members(term, url)
     mp = yaml_from(file[:download_url])
     next if mp['tenures'].nil?
 
-    data = { 
+    data = {
       id: nil,
       name: mp['name']['en'],
       name__en: mp['name']['en'],
       name__el: mp['name']['el'],
       email: mp['email'],
       image: mp['mugshot'],
+      gender: mp['gender'],
+      birth_date: mp['birth_date'],
+      facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
+      twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
       wikipedia: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'wikipedia' },
       source: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'parliament.cy' },
     }
@@ -51,7 +55,7 @@ def scrape_members(term, url)
         tenure['parliamentary_group_id'] = '_IND'
         tenure['parl_group'] ||= { 'en' => 'Independent', 'el' => 'Independent' }
       end
-      mem = data.merge({ 
+      mem = data.merge({
         term: term[:id],
         start_date: tenure['start_date'],
         end_date: tenure['end_date'],
