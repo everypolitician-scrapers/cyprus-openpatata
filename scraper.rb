@@ -9,9 +9,6 @@ require 'pry'
 require 'scraperwiki'
 require 'yaml'
 
-require 'open-uri/cached'
-OpenURI::Cache.cache_path = '.cache'
-
 def json_from(url)
   JSON.parse(open(url).read, symbolize_names: true)
 end
@@ -40,7 +37,7 @@ def scrape_members(term, url)
       birth_date: mp['birth_date'],
       facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
       twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
-      wikipedia: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'wikipedia' },
+      identifier__wikidata: (mp['identifiers'] ||{})['http://www.wikidata.org/entity/'],
       source: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'parliament.cy' },
     }
     data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
