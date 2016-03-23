@@ -40,6 +40,10 @@ def scrape_members(term, url)
       identifier__wikidata: (mp['identifiers'] ||{})['http://www.wikidata.org/entity/'],
       source: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'parliament.cy' },
     }
+    if data[:source].to_s.empty?
+      warn "No usable data in #{mp}"
+      next
+    end
     data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
     data[:identifier__openpatata] = File.basename(url, '.*')
     mp['tenures'].select { |tenure|
