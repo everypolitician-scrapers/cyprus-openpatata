@@ -51,10 +51,10 @@ def scrape_members(term, url)
     }.each do |tenure|
       if tenure['parliamentary_group_id']
         pg = parl_group(tenure['parliamentary_group_id'])
-        tenure['parl_group'] ||= { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
+        pg_name = { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
       else
         tenure['parliamentary_group_id'] = '_IND'
-        tenure['parl_group'] ||= { 'en' => 'Independent', 'el' => 'Independent' }
+        pg_name = { 'en' => 'Independent', 'el' => 'Independent' }
       end
       mem = data.merge({
         term: term[:id],
@@ -63,8 +63,8 @@ def scrape_members(term, url)
         area: tenure['electoral_district']['en'],
         area__el: tenure['electoral_district']['el'],
         faction_id: tenure['parliamentary_group_id'],
-        faction: tenure['parl_group']['en'],
-        faction__el: tenure['parl_group']['el'],
+        faction: pg_name['en'],
+        faction__el: pg_name['el'],
       })
       ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
     end
