@@ -32,7 +32,7 @@ def scrape_members(term, url)
       name__en: mp['name']['en'],
       name__el: mp['name']['el'],
       email: mp['email'],
-      image: mp['mugshot'],
+      image: mp['image'],
       gender: mp['gender'],
       birth_date: mp['birth_date'],
       facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
