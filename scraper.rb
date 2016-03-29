@@ -38,7 +38,7 @@ def scrape_members(term, url)
       facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
       twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
       identifier__wikidata: (mp['identifiers'] ||{})['http://www.wikidata.org/entity/'],
-      source: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'parliament.cy' },
+      source: mp['_sources'].find { |l| l.include? 'parliament.cy' },
     }
     if data[:source].to_s.empty?
       warn "No usable data in #{mp}"
