@@ -37,7 +37,7 @@ def scrape_members(term, url)
       birth_date: mp['birth_date'],
       facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
       twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
-      identifier__wikidata: (mp['identifiers'] ||{})['http://www.wikidata.org/entity/'],
+      identifier__wikidata: mp['identifiers'].find { |i| i['scheme'] == 'http://www.wikidata.org/entity/' }['identifier'],
       source: mp['_sources'].find { |l| l.include? 'parliament.cy' },
     }
     if data[:source].to_s.empty?
