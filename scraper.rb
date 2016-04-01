@@ -32,13 +32,13 @@ def scrape_members(term, url)
       name__en: mp['name']['en'],
       name__el: mp['name']['el'],
       email: mp['email'],
-      image: mp['mugshot'],
+      image: mp['image'],
       gender: mp['gender'],
       birth_date: mp['birth_date'],
       facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
       twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
-      identifier__wikidata: (mp['identifiers'] ||{})['http://www.wikidata.org/entity/'],
-      source: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'parliament.cy' },
+      identifier__wikidata: mp['identifiers'].find { |i| i['scheme'] == 'http://www.wikidata.org/entity/' }['identifier'],
+      source: mp['_sources'].find { |l| l.include? 'parliament.cy' },
     }
     if data[:source].to_s.empty?
       warn "No usable data in #{mp}"
@@ -51,10 +51,10 @@ def scrape_members(term, url)
     }.each do |tenure|
       if tenure['parliamentary_group_id']
         pg = parl_group(tenure['parliamentary_group_id'])
-        tenure['parl_group'] ||= { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
+        pg_name = { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
       else
         tenure['parliamentary_group_id'] = '_IND'
-        tenure['parl_group'] ||= { 'en' => 'Independent', 'el' => 'Independent' }
+        pg_name = { 'en' => 'Independent', 'el' => 'Independent' }
       end
       mem = data.merge({
         term: term[:id],
@@ -63,8 +63,8 @@ def scrape_members(term, url)
         area: tenure['electoral_district']['en'],
         area__el: tenure['electoral_district']['el'],
         faction_id: tenure['parliamentary_group_id'],
-        faction: tenure['parl_group']['en'],
-        faction__el: tenure['parl_group']['el'],
+        faction: pg_name['en'],
+        faction__el: pg_name['el'],
       })
       ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
     end
