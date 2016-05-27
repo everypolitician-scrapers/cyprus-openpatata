@@ -45,7 +45,7 @@ def scrape_members(term, url)
       source: mp['_sources'].find { |l| l.include? 'parliament.cy' },
     }
     if data[:source].to_s.empty?
-      warn "No usable data in #{mp}"
+      # warn "No usable data in #{mp}"
       next
     end
     data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
@@ -53,11 +53,11 @@ def scrape_members(term, url)
     mp['tenures'].select { |tenure|
       tenure['end_date'].to_s.empty? || tenure['end_date'].to_s >= term[:start_date]
     }.each do |tenure|
-      if tenure['parliamentary_group_id']
-        pg = party(tenure['parliamentary_group_id'])
+      if tenure['party_id']
+        pg = party(tenure['party_id'])
         pg_name = { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
       else
-        tenure['parliamentary_group_id'] = '_IND'
+        tenure['party_id'] = '_IND'
         pg_name = { 'en' => 'Independent', 'el' => 'Independent' }
       end
       area = district( tenure['electoral_district_id'] ) or raise binding.pry
@@ -68,11 +68,11 @@ def scrape_members(term, url)
         area_id: tenure['electoral_district_id'],
         area: area['name']['en'],
         area__el: area['name']['el'],
-        faction_id: tenure['parliamentary_group_id'],
+        faction_id: tenure['party_id'],
         faction: pg_name['en'],
         faction__el: pg_name['el'],
       })
-      ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
+      ScraperWiki.save_sqlite([:id, :term, :faction_id, :start_date], mem)
     end 
   end
 end
