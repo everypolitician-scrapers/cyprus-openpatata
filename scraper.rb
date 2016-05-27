@@ -72,7 +72,6 @@ def scrape_members(term, url)
         faction: pg_name['en'],
         faction__el: pg_name['el'],
       })
-      warn mem
       ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
     end 
   end
