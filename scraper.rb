@@ -17,8 +17,8 @@ def yaml_from(url)
   YAML.parse(open(url).read).to_ruby
 end
 
-def parl_group(id)
-  (@pg ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/parliamentary_groups/%s.yaml' % id)
+def party(id)
+  (@pg ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/parties/%s.yaml' % id)
 end
 
 def scrape_members(term, url)
@@ -50,7 +50,7 @@ def scrape_members(term, url)
       tenure['end_date'].to_s.empty? || tenure['end_date'].to_s >= term[:start_date]
     }.each do |tenure|
       if tenure['parliamentary_group_id']
-        pg = parl_group(tenure['parliamentary_group_id'])
+        pg = party(tenure['parliamentary_group_id'])
         pg_name = { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
       else
         tenure['parliamentary_group_id'] = '_IND'
@@ -66,9 +66,10 @@ def scrape_members(term, url)
         faction: pg_name['en'],
         faction__el: pg_name['el'],
       })
+      warn mem
       ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
-    end
-  end
+    end rescue binding.pry
+  end rescue binding.pry
 end
 
 
