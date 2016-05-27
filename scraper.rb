@@ -21,6 +21,10 @@ def party(id)
   (@pg ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/parties/%s.yaml' % id)
 end
 
+def district(id)
+  (@district ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/electoral_districts/%s.yaml' % id)
+end
+
 def scrape_members(term, url)
   json_from(url).each do |file|
     mp = yaml_from(file[:download_url])
@@ -56,20 +60,22 @@ def scrape_members(term, url)
         tenure['parliamentary_group_id'] = '_IND'
         pg_name = { 'en' => 'Independent', 'el' => 'Independent' }
       end
+      area = district( tenure['electoral_district_id'] ) or raise binding.pry
       mem = data.merge({
         term: term[:id],
         start_date: tenure['start_date'],
         end_date: tenure['end_date'],
-        area: tenure['electoral_district']['en'],
-        area__el: tenure['electoral_district']['el'],
+        area_id: tenure['electoral_district_id'],
+        area: area['name']['en'],
+        area__el: area['name']['el'],
         faction_id: tenure['parliamentary_group_id'],
         faction: pg_name['en'],
         faction__el: pg_name['el'],
       })
       warn mem
       ScraperWiki.save_sqlite([:id, :term, :faction, :start_date], mem)
-    end rescue binding.pry
-  end rescue binding.pry
+    end 
+  end
 end
 
 
