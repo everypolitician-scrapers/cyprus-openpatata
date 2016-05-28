@@ -7,73 +7,64 @@ require 'nokogiri'
 require 'open-uri'
 require 'pry'
 require 'scraperwiki'
-require 'yaml'
+require 'uri'
 
-def json_from(url)
-  JSON.parse(open(url).read, symbolize_names: true)
+def json_from(filename)
+  JSON.parse(open(URI.join(
+    'https://raw.githubusercontent.com/openpatata/openpatata-data/master/_dumps/json/',
+    filename)).read, symbolize_names: true)
 end
 
-def yaml_from(url)
-  YAML.parse(open(url).read).to_ruby
-end
-
-def party(id)
-  (@pg ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/parties/%s.yaml' % id)
-end
-
-def district(id)
-  (@district ||= {})[id] ||= yaml_from('https://raw.githubusercontent.com/openpatata/openpatata-data/master/electoral_districts/%s.yaml' % id)
-end
-
-def scrape_members(term, url)
-  json_from(url).each do |file|
-    mp = yaml_from(file[:download_url])
-    next if mp['tenures'].nil?
+def scrape_members(term, areas, mps, parties)
+  mps.each do |mp|
+    next if mp[:tenures].nil?
 
     data = {
       id: nil,
-      name: mp['name']['en'],
-      name__en: mp['name']['en'],
-      name__el: mp['name']['el'],
-      email: mp['email'],
-      image: mp['image'],
-      gender: mp['gender'],
-      birth_date: mp['birth_date'],
-      facebook: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'facebook' },
-      twitter: mp['links'].map{ |l| l['url'] }.find { |l| l.include? 'twitter' },
-      identifier__wikidata: mp['identifiers'].find { |i| i['scheme'] == 'http://www.wikidata.org/entity/' }['identifier'],
-      source: mp['_sources'].find { |l| l.include? 'parliament.cy' },
+      name: mp[:name][:en],
+      name__en: mp[:name][:en],
+      name__el: mp[:name][:el],
+      name__tr: mp[:name][:tr],
+      email: mp[:email],
+      image: mp[:image],
+      gender: mp[:gender],
+      birth_date: mp[:birth_date],
+      facebook: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'facebook' },
+      twitter: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'twitter' },
+      identifier__wikidata: mp[:identifiers].find { |i| i[:scheme] == 'http://www.wikidata.org/entity/' }[:identifier],
+      source: mp[:_sources].find { |l| l.include? 'parliament.cy' },
     }
     if data[:source].to_s.empty?
       # warn "No usable data in #{mp}"
       next
     end
     data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
-    data[:identifier__openpatata] = File.basename(url, '.*')
-    mp['tenures'].select { |tenure|
-      tenure['end_date'].to_s.empty? || tenure['end_date'].to_s >= term[:start_date]
+    data[:identifier__openpatata] = mp[:_id]
+    mp[:tenures].select { |tenure|
+      tenure[:end_date].to_s.empty? || tenure[:end_date].to_s >= term[:start_date]
     }.each do |tenure|
-      if tenure['party_id']
-        pg = party(tenure['party_id'])
-        pg_name = { 'en' => pg['name']['en'], 'el' => pg['name']['el'] }
+      if tenure[:party_id]
+        party_name = parties.find { |p| p[:_id] == tenure[:party_id] }[:name]
       else
-        tenure['party_id'] = '_IND'
-        pg_name = { 'en' => 'Independent', 'el' => 'Independent' }
+        tenure[:party_id] = '_IND'
+        party_name = { en: 'Independent', el: 'Independent', tr: 'Independent' }
       end
-      area = district( tenure['electoral_district_id'] ) or raise binding.pry
+      area = areas.find { |a| a[:_id] == tenure[:electoral_district_id] } or raise binding.pry
       mem = data.merge({
         term: term[:id],
-        start_date: tenure['start_date'],
-        end_date: tenure['end_date'],
-        area_id: tenure['electoral_district_id'],
-        area: area['name']['en'],
-        area__el: area['name']['el'],
-        faction_id: tenure['party_id'],
-        faction: pg_name['en'],
-        faction__el: pg_name['el'],
+        start_date: tenure[:start_date],
+        end_date: tenure[:end_date],
+        area_id: tenure[:electoral_district_id],
+        area: area[:name][:en],
+        area__el: area[:name][:el],
+        area__tr: area[:name][:tr],
+        faction_id: tenure[:party_id],
+        faction: party_name[:en],
+        faction__el: party_name[:el],
+        faction__tr: party_name[:tr],
       })
       ScraperWiki.save_sqlite([:id, :term, :faction_id, :start_date], mem)
-    end 
+    end
   end
 end
 
@@ -85,4 +76,7 @@ term = {
 }
 ScraperWiki.save_sqlite([:id], term, 'terms')
 
-scrape_members(term, 'https://api.github.com/repos/openpatata/openpatata-data/contents/mps')
+areas = json_from 'electoral_districts.json'
+mps = json_from 'mps.json'
+parties = json_from 'parties.json'
+scrape_members(term, areas, mps, parties)
