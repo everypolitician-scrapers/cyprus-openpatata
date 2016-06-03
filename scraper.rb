@@ -31,6 +31,7 @@ def parse_members(terms, areas, mps, parties)
       birth_date: mp[:birth_date],
       facebook: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'facebook' },
       twitter: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'twitter' },
+      identifier__parliament_cy: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'parliament.cy' }.to_s.split("/").last,
       identifier__openpatata: mp[:_id],
       identifier__wikidata: mp[:identifiers].find { |i| i[:scheme] == 'http://www.wikidata.org/entity/' }[:identifier],
     }
