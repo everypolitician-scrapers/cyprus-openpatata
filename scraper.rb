@@ -20,7 +20,7 @@ def parse_members(terms, areas, mps, parties)
     next if mp[:tenures].nil?
 
     data = {
-      id: nil,
+      id: mp[:_id],
       name: mp[:name][:en],
       name__en: mp[:name][:en],
       name__el: mp[:name][:el],
@@ -31,15 +31,10 @@ def parse_members(terms, areas, mps, parties)
       birth_date: mp[:birth_date],
       facebook: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'facebook' },
       twitter: mp[:links].map{ |l| l[:url] }.find { |l| l.include? 'twitter' },
+      identifier__openpatata: mp[:_id],
       identifier__wikidata: mp[:identifiers].find { |i| i[:scheme] == 'http://www.wikidata.org/entity/' }[:identifier],
-      source: mp[:_sources].find { |l| l.include? 'parliament.cy' },
     }
-    if data[:source].to_s.empty?
-      # warn "No usable data in #{mp}"
-      next
-    end
-    data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
-    data[:identifier__openpatata] = mp[:_id]
+
     mp[:tenures].each do |tenure|
       if tenure[:party_id]
         party_name = parties.find { |p| p[:_id] == tenure[:party_id] }[:name]
