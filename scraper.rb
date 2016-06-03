@@ -15,7 +15,7 @@ def json_from(filename)
     filename)).read, symbolize_names: true)
 end
 
-def scrape_members(term, areas, mps, parties)
+def parse_members(terms, areas, mps, parties)
   mps.each do |mp|
     next if mp[:tenures].nil?
 
@@ -40,9 +40,7 @@ def scrape_members(term, areas, mps, parties)
     end
     data[:id] = data[:identifier__parliament_cy] = File.basename data[:source]
     data[:identifier__openpatata] = mp[:_id]
-    mp[:tenures].select { |tenure|
-      tenure[:end_date].to_s.empty? || tenure[:end_date].to_s >= term[:start_date]
-    }.each do |tenure|
+    mp[:tenures].each do |tenure|
       if tenure[:party_id]
         party_name = parties.find { |p| p[:_id] == tenure[:party_id] }[:name]
       else
@@ -51,7 +49,7 @@ def scrape_members(term, areas, mps, parties)
       end
       area = areas.find { |a| a[:_id] == tenure[:electoral_district_id] } or raise binding.pry
       mem = data.merge({
-        term: term[:id],
+        term: tenure[:parliamentary_period_id],
         start_date: tenure[:start_date],
         end_date: tenure[:end_date],
         area_id: tenure[:electoral_district_id],
@@ -63,20 +61,26 @@ def scrape_members(term, areas, mps, parties)
         faction__el: party_name[:el],
         faction__tr: party_name[:tr],
       })
-      ScraperWiki.save_sqlite([:id, :term, :faction_id, :start_date], mem)
+      ScraperWiki.save_sqlite([:id, :term, :faction_id], mem)
     end
   end
 end
 
-
-term = {
-  id: 2011,
-  name: '2011–',
-  start_date: '2011-06-02',
-}
-ScraperWiki.save_sqlite([:id], term, 'terms')
+def parse_terms(terms)
+  terms.each do |term|
+    term = {
+      id: term[:_id],
+      name: "#{term[:number][:en]}th",
+      start_date: term[:start_date],
+      end_date: term[:end_date]
+    }
+    ScraperWiki.save_sqlite([:id], term, 'terms')
+  end
+end
 
 areas = json_from 'electoral_districts.json'
 mps = json_from 'mps.json'
 parties = json_from 'parties.json'
-scrape_members(term, areas, mps, parties)
+terms = json_from 'parliamentary_periods.json'
+parse_terms(terms)
+parse_members(terms, areas, mps, parties)
