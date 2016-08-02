@@ -11,7 +11,7 @@ require 'uri'
 
 def json_from(filename)
   JSON.parse(open(URI.join(
-    'https://raw.githubusercontent.com/openpatata/openpatata-data/export/',
+    'https://cdn.rawgit.com/openpatata/openpatata-data/export/',
     filename)).read, symbolize_names: true)
 end
 
