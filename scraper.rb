@@ -26,6 +26,7 @@ def parse_members(terms, areas, mps, parties)
       name__el: mp[:name][:el],
       name__tr: mp[:name][:tr],
       email: mp[:email],
+      phone: (mp[:contact_details].find { |i| i[:type] == 'voice' && i[:note] == 'parliament' } || {})[:value],
       image: mp[:image],
       gender: mp[:gender],
       birth_date: mp[:birth_date],
